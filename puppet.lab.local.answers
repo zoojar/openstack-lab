@@ -1,4 +1,4 @@
-e 3.8 installer answers file
+# PE 3.8 installer answers file
 # Flavor: "monolithic"
 # Created: 2015-09-28 18:26:33 UTC
 # https://docs.puppetlabs.com/pe/3.8/install_answer_file_reference.html
