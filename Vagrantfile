@@ -6,9 +6,10 @@ $domain                   = "lab.local"
 $master_hostname          = "puppet"
 $master_ip                = "192.168.100.100"
 
-$peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.1/puppet-enterprise-3.8.1-ubuntu-14.04-amd64.tar.gz"
+# $peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-el-7-x86_64.tar.gz"
+$peinstaller_url          = "http://192.168.0.5/puppet-enterprise-3.8.2-el-7-x86_64.tar.gz"
 
-$peinstaller_url_windows  = "http://pm.puppetlabs.com/puppet-enterprise/3.8.1/puppet-enterprise-3.8.1-x64.msi"
+$peinstaller_url_windows  = "http://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-x64.msi"
 
 $peanswers_url            = "https://raw.githubusercontent.com/zoojar/openstack-lab/master/puppet.lab.local.answers"
 $r10kyaml_url             = "https://raw.githubusercontent.com/zoojar/vagrantlab-puppet/master/r10k.yaml"
@@ -21,18 +22,18 @@ nodes = [
     :hostname        => $master_hostname, 
     :domain          => $domain,
     :ip              => $master_ip, 
-    :box             => 'puppetlabs/ubuntu-14.04-64-nocm', 
+    :box             => 'puppetlabs/centos-7.0-64-nocm', 
     :ram             => 8000,
     :cpus            => 4,
     :cpuexecutioncap => 80,
-    :shell_script    => "#!/bin/sh", # $install_puppet_master_ubuntu1440, 
-    :shell_args      => [$peinstaller_url, $peanswers_url, $r10kyaml_url, $master_hostname, $master_domain, $master_ip] 
+    :shell_script    => $install_puppet_master_ceentos7, 
+    :shell_args      => [$peinstaller_url, $peanswers_url, $r10kyaml_url, $master_hostname, $domain, $master_ip] 
   },
   { 
     :hostname        => 'controller-01',
     :domain          => $domain,
     :ip              => '192.168.100.12', 
-    :box             => 'puppetlabs/ubuntu-14.04-64-nocm', 
+    :box             => 'puppetlabs/centos-7.0-64-nocm', 
     :shell_script    => $install_puppet_agent_linux, 
     :shell_args      => [$master_ip, $master_hostname, $domain] 
   }
@@ -56,10 +57,10 @@ Vagrant.configure("2") do |config|
         ]
       end
       nodeconfig.vm.provision :reload
-      #nodeconfig.vm.provision "shell" do | s |
-      #  s.inline = node[:shell_script]
-      #  s.args   = node[:shell_args]
-      #end
+      nodeconfig.vm.provision "shell" do | s |
+        s.inline = node[:shell_script]
+        s.args   = node[:shell_args]
+      end
     end
   end
 end

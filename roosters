@@ -1,14 +1,18 @@
-$install_puppet_master_ubuntu1404 = <<SCRIPT
+$install_puppet_master_centos7 = <<SCRIPT
 peinstaller_url="$1"
 peanswers_url="$2"
 r10kyaml_url="$3"
 master_hostname="$4"
 master_domain="$5"
 master_ip="$6"
-hiera_yaml_url="https://raw.githubusercontent.com/zoojar/vagrantlab-puppet/master/hiera.yaml"
+hiera_yaml_url="https://raw.githubusercontent.com/zoojar/openstack-lab/master/hiera.yaml"
+api_cert="/etc/puppetlabs/puppet/ssl/certs/$master_hostname.$master_domain.pem"
+api_key="/etc/puppetlabs/puppet/ssl/private_keys/$master_hostname.$master_domain.pem"
+api_cacert="/etc/puppetlabs/puppet/ssl/certs/ca.pem"
 
-echo "Adding [$master_hosts] to hosts file..."
-sudo echo -e "$master_hosts\n$(cat /etc/hosts)" > /etc/hosts
+
+echo "Adding [$master_hostname.$master_domain] to hosts file..."
+sudo echo -e "$master_ip	$master_hostname.$master_domain $master_hostname\n$(cat /etc/hosts)" > /etc/hosts
 
 echo "Disabling firewall"
 sudo ufw disable
@@ -24,11 +28,11 @@ curl -L $peanswers_url > /tmp/master.answers
 echo "Installing puppet..."
 sudo /tmp/peinstaller/puppet-enterprise-installer -a /tmp/master.answers
 
-echo "Add the hiera.yaml to the codedir..."
-sudo curl -L "${hiera_yaml_url}" > `sudo puppet config print codedir`/hiera.yaml
+echo "Add the hiera.yaml..."
+sudo curl -L "${hiera_yaml_url}" > `sudo puppet config print hiera_config`
 
 echo "Installing git, for r10k with shellgit..."
-sudo apt-get install git -y
+sudo yum install git -y
 
 echo "Configuring r10k with puppet from $r10kyaml_url: $(curl -sL $r10kyaml_url)"
 curl -L $r10kyaml_url > /etc/puppetlabs/r10k/r10k.yaml
@@ -58,85 +62,16 @@ echo "done."
 SCRIPT
 
 
-
-$install_puppet_compiler = <<SCRIPT
-master_ip="$1"
-master_hostname="$2"
-master_domain="$3"
-master_hosts="$4"
-mom_key_path="/tmp/mom_key.pem"
-mom_key_url="https://raw.githubusercontent.com/zoojar/vagrantlab-puppet/master/mom-key.pem"
-master="$master_hostname.$master_domain"
-myhostname=$(hostname)
-
-echo "Adding [$master_hosts] to hosts file..."
-sudo echo -e "$master_hosts\n$(cat /etc/hosts)" > /etc/hosts
-
-echo "Disabling firewall"
-sudo systemctl mask firewalld ; sudo systemctl stop firewalld
-
-echo "Adding private key $mom_key_url..."
-curl -L $mom_key_url > $mom_key_path
-chmod 0600 $mom_key_path
-
-echo "Stopping MOM's Agent..."
-sudo echo -e "sudo service puppet stop" > /tmp/mom-agent-stop.sh
-sudo ssh -o StrictHostKeyChecking=no -i $mom_key_path root@puppet.lab.local "bash -s" -- < /tmp/mom-agent-stop.sh
-
-echo "2.1 Installing puppet compile master from https://$master_hostname.$master_domain:8140/packages/current/install.bash..."
-curl -k https://$master_hostname.$master_domain:8140/packages/current/install.bash | sudo bash -s main:dns_alt_names=puppet.lab.local,lei-compiler-01.lab.local,lei-compiler-02.lab.local
-
-sudo puppet agent -t
-
-echo "Waiting for cert request on master..."
-sleep 10
-
-echo "2.2 signing this compile master..."
-sudo echo -e "sudo puppet cert --allow-dns-alt-names sign $(hostname)" > /tmp/sign_me.sh
-sudo ssh -o StrictHostKeyChecking=no -i $mom_key_path root@puppet.lab.local "bash -s" -- < /tmp/sign_me.sh
-
-echo "2.3 Running puppet on this node..."
-sudo puppet agent -t
-
-echo "2.4 Setting up custom fact post-agent run for compiler node classification..."
-sudo echo -e "compile_master_staged=true" > /opt/puppetlabs/facter/facts.d/multimaster_rules.txt
-
-echo "4.1 Running puppet on this node..."
-sudo puppet agent -t
-
-echo "Starting MOM's Agent..."
-sudo echo -e "sudo service puppet start" > /tmp/mom-agent-start.sh
-sudo ssh -o StrictHostKeyChecking=no -i $mom_key_path root@puppet.lab.local "bash -s" -- < /tmp/mom-agent-start.sh
-
-echo "Waiting for puppetdb & console restart..."
-sleep 240
-
-echo "Setting up custom fact post-agent run for compiler node classification..."
-sudo echo -e "\ncompile_master_classified=true" >> /opt/puppetlabs/facter/facts.d/multimaster_rules.txt
-sudo puppet agent -t
-
-echo "Running r10k via webhook..."
-curl -d '{\"ref\": \"refs/heads/production\" }\' -H \"Accept: applicaton/json\" \'http://peadmin:peadmin@puppet.lab.local:8088/payload\' -k -q
-
-echo "Last agent run..."
-sudo puppet agent -t
-
-echo "Done."
-
-SCRIPT
-
-
-
 $install_puppet_agent_linux = <<SCRIPT
 master_ip="$1"
 master_hostname="$2"
 master_domain="$3"
 
+echo "Disabling firewall"
+sudo ufw disable
+
 echo "Adding [$master_ip $master_hostname.$master_domain $master_hostname] to hosts file..."
 sudo echo -e "$master_ip $master_hostname.$master_domain $master_hostname\n$(cat /etc/hosts)" > /etc/hosts
-
-echo "Disabling firewall"
-sudo systemctl mask firewalld ; sudo systemctl stop firewalld
 
 echo "Setting up custom csr attributes for autosigning..."
 sudo mkdir -p /etc/puppetlabs/puppet
