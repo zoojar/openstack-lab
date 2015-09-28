@@ -6,8 +6,8 @@ $domain                   = "lab.local"
 $master_hostname          = "puppet"
 $master_ip                = "192.168.100.100"
 
-# $peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-el-7-x86_64.tar.gz"
-$peinstaller_url          = "http://192.168.0.5/puppet-enterprise-3.8.2-el-7-x86_64.tar.gz"
+# $peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-el-7-x86_64.tar"
+$peinstaller_url          = "http://192.168.0.5/puppet-enterprise-3.8.2-el-7-x86_64.tar"
 
 $peinstaller_url_windows  = "http://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-x64.msi"
 
