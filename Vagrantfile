@@ -26,7 +26,7 @@ nodes = [
     :ram             => 8000,
     :cpus            => 4,
     :cpuexecutioncap => 80,
-    :shell_script    => $install_puppet_master_ceentos7, 
+    :shell_script    => $install_puppet_master_centos7, 
     :shell_args      => [$peinstaller_url, $peanswers_url, $r10kyaml_url, $master_hostname, $domain, $master_ip] 
   },
   { 
