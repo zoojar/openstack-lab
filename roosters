@@ -14,8 +14,9 @@ api_cacert="/etc/puppetlabs/puppet/ssl/certs/ca.pem"
 echo "Adding [$master_hostname.$master_domain] to hosts file..."
 sudo echo -e "$master_ip	$master_hostname.$master_domain $master_hostname\n$(cat /etc/hosts)" > /etc/hosts
 
+
 echo "Disabling firewall"
-sudo ufw disable
+sudo systemctl mask firewalld ; sudo systemctl stop firewalld
 
 echo "Downloading puppet from $peinstaller_url and extracting to /tmp/peinstaller..." 
 wget -q $peinstaller_url -O /tmp/peinstaller.tar.gz
@@ -67,8 +68,9 @@ master_ip="$1"
 master_hostname="$2"
 master_domain="$3"
 
+
 echo "Disabling firewall"
-sudo ufw disable
+sudo systemctl mask firewalld ; sudo systemctl stop firewalld
 
 echo "Adding [$master_ip $master_hostname.$master_domain $master_hostname] to hosts file..."
 sudo echo -e "$master_ip $master_hostname.$master_domain $master_hostname\n$(cat /etc/hosts)" > /etc/hosts
