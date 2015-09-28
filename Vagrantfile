@@ -1,0 +1,65 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+
+$domain                   = "lab.local"
+$master_hostname          = "puppet"
+$master_ip                = "192.168.100.100"
+
+$peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.1/puppet-enterprise-3.8.1-ubuntu-14.04-amd64.tar.gz"
+
+$peinstaller_url_windows  = "http://pm.puppetlabs.com/puppet-enterprise/3.8.1/puppet-enterprise-3.8.1-x64.msi"
+
+$peanswers_url            = "https://raw.githubusercontent.com/zoojar/openstack-lab/master/puppet.lab.local.answers"
+$r10kyaml_url             = "https://raw.githubusercontent.com/zoojar/vagrantlab-puppet/master/r10k.yaml"
+$autosign_these_nodes     = "*"
+
+load 'roosters'
+
+nodes = [
+  { 
+    :hostname        => $master_hostname, 
+    :domain          => $domain,
+    :ip              => $master_ip, 
+    :box             => 'puppetlabs/ubuntu-14.04-64-nocm', 
+    :ram             => 8000,
+    :cpus            => 4,
+    :cpuexecutioncap => 80,
+    :shell_script    => "#!/bin/sh", # $install_puppet_master_ubuntu1440, 
+    :shell_args      => [$peinstaller_url, $peanswers_url, $r10kyaml_url, $master_hostname, $master_domain, $master_ip] 
+  },
+  { 
+    :hostname        => 'controller-01',
+    :domain          => $domain,
+    :ip              => '192.168.100.12', 
+    :box             => 'puppetlabs/ubuntu-14.04-64-nocm', 
+    :shell_script    => $install_puppet_agent_linux, 
+    :shell_args      => [$master_ip, $master_hostname, $domain] 
+  }
+]
+
+Vagrant.configure("2") do |config|
+  nodes.each do |node|
+    config.vm.define node[:hostname] do |nodeconfig|
+      nodeconfig.vm.box      = node[:box]
+      nodeconfig.vm.hostname = node[:domain] ? "#{node[:hostname]}.#{node[:domain]}" : "#{node[:hostname]}" ;
+      memory                 = node[:ram] ? node[:ram] : 1000 ; 
+      cpus                   = node[:cpus] ? node[:cpus] : 2 ;
+      cpuexecutioncap        = node[:cpuexecutioncap] ? node[:cpuexecutioncap] : 50 ;
+      nodeconfig.vm.network :private_network, ip: node[:ip]
+      nodeconfig.vm.provider :virtualbox do |vb|
+        vb.customize [
+          "modifyvm", :id,
+          "--memory", memory.to_s,
+          "--cpus", cpus.to_s,
+          "--cpuexecutioncap", cpuexecutioncap.to_s,
+        ]
+      end
+      nodeconfig.vm.provision :reload
+      #nodeconfig.vm.provision "shell" do | s |
+      #  s.inline = node[:shell_script]
+      #  s.args   = node[:shell_args]
+      #end
+    end
+  end
+end

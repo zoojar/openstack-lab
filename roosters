@@ -1,0 +1,183 @@
+$install_puppet_master_ubuntu1404 = <<SCRIPT
+peinstaller_url="$1"
+peanswers_url="$2"
+r10kyaml_url="$3"
+master_hostname="$4"
+master_domain="$5"
+master_ip="$6"
+hiera_yaml_url="https://raw.githubusercontent.com/zoojar/vagrantlab-puppet/master/hiera.yaml"
+
+echo "Adding [$master_hosts] to hosts file..."
+sudo echo -e "$master_hosts\n$(cat /etc/hosts)" > /etc/hosts
+
+echo "Disabling firewall"
+sudo ufw disable
+
+echo "Downloading puppet from $peinstaller_url and extracting to /tmp/peinstaller..." 
+wget -q $peinstaller_url -O /tmp/peinstaller.tar.gz
+mkdir /tmp/peinstaller
+tar -xf /tmp/peinstaller.tar.gz --strip-components=1 -C /tmp/peinstaller
+
+echo "Downloading answers file from $peanswers_url..."
+curl -L $peanswers_url > /tmp/master.answers
+
+echo "Installing puppet..."
+sudo /tmp/peinstaller/puppet-enterprise-installer -a /tmp/master.answers
+
+echo "Add the hiera.yaml to the codedir..."
+sudo curl -L "${hiera_yaml_url}" > `sudo puppet config print codedir`/hiera.yaml
+
+echo "Installing git, for r10k with shellgit..."
+sudo apt-get install git -y
+
+echo "Configuring r10k with puppet from $r10kyaml_url: $(curl -sL $r10kyaml_url)"
+curl -L $r10kyaml_url > /etc/puppetlabs/r10k/r10k.yaml
+sudo r10k deploy environment -pv
+
+echo "Updating classes via classifier API..."
+sudo curl -X POST https://$master_hostname.$master_domain:4433/classifier-api/v1/update-classes --cert $api_cert --key $api_key --cacert $api_cacert -v
+
+echo "Adding the puppetclassify puppet gem..."
+sudo puppet apply -e "package{'puppetclassify':ensure=>'0.1.0',provider=>'puppet_gem'}" -v
+echo "Classifying nodes with module https://github.com/zoojar/prosvcs-node_manager..."
+sudo puppet apply -e 'include profile::master_classifier' -v
+
+echo "Configuring policy-based autosigning..."
+echo 'd41d8cd98f00b204e9800998ecf8427e' >/etc/puppetlabs/puppet/global-psk
+curl -L "${autosign_exe_url}" > /etc/puppetlabs/puppet/autosign.sh
+sudo chmod 500 /etc/puppetlabs/puppet/autosign.sh ; sudo chown pe-puppet /etc/puppetlabs/puppet/autosign.sh
+sudo puppet config set autosign /etc/puppetlabs/puppet/autosign.sh --section master
+
+echo "restarting pe-puppetserver service for autosigning, eyaml & rbac whitelist config to take affect..."
+sudo service pe-puppetserver restart
+
+sudo puppet agent -t
+
+echo "done."
+
+SCRIPT
+
+
+
+$install_puppet_compiler = <<SCRIPT
+master_ip="$1"
+master_hostname="$2"
+master_domain="$3"
+master_hosts="$4"
+mom_key_path="/tmp/mom_key.pem"
+mom_key_url="https://raw.githubusercontent.com/zoojar/vagrantlab-puppet/master/mom-key.pem"
+master="$master_hostname.$master_domain"
+myhostname=$(hostname)
+
+echo "Adding [$master_hosts] to hosts file..."
+sudo echo -e "$master_hosts\n$(cat /etc/hosts)" > /etc/hosts
+
+echo "Disabling firewall"
+sudo systemctl mask firewalld ; sudo systemctl stop firewalld
+
+echo "Adding private key $mom_key_url..."
+curl -L $mom_key_url > $mom_key_path
+chmod 0600 $mom_key_path
+
+echo "Stopping MOM's Agent..."
+sudo echo -e "sudo service puppet stop" > /tmp/mom-agent-stop.sh
+sudo ssh -o StrictHostKeyChecking=no -i $mom_key_path root@puppet.lab.local "bash -s" -- < /tmp/mom-agent-stop.sh
+
+echo "2.1 Installing puppet compile master from https://$master_hostname.$master_domain:8140/packages/current/install.bash..."
+curl -k https://$master_hostname.$master_domain:8140/packages/current/install.bash | sudo bash -s main:dns_alt_names=puppet.lab.local,lei-compiler-01.lab.local,lei-compiler-02.lab.local
+
+sudo puppet agent -t
+
+echo "Waiting for cert request on master..."
+sleep 10
+
+echo "2.2 signing this compile master..."
+sudo echo -e "sudo puppet cert --allow-dns-alt-names sign $(hostname)" > /tmp/sign_me.sh
+sudo ssh -o StrictHostKeyChecking=no -i $mom_key_path root@puppet.lab.local "bash -s" -- < /tmp/sign_me.sh
+
+echo "2.3 Running puppet on this node..."
+sudo puppet agent -t
+
+echo "2.4 Setting up custom fact post-agent run for compiler node classification..."
+sudo echo -e "compile_master_staged=true" > /opt/puppetlabs/facter/facts.d/multimaster_rules.txt
+
+echo "4.1 Running puppet on this node..."
+sudo puppet agent -t
+
+echo "Starting MOM's Agent..."
+sudo echo -e "sudo service puppet start" > /tmp/mom-agent-start.sh
+sudo ssh -o StrictHostKeyChecking=no -i $mom_key_path root@puppet.lab.local "bash -s" -- < /tmp/mom-agent-start.sh
+
+echo "Waiting for puppetdb & console restart..."
+sleep 240
+
+echo "Setting up custom fact post-agent run for compiler node classification..."
+sudo echo -e "\ncompile_master_classified=true" >> /opt/puppetlabs/facter/facts.d/multimaster_rules.txt
+sudo puppet agent -t
+
+echo "Running r10k via webhook..."
+curl -d '{\"ref\": \"refs/heads/production\" }\' -H \"Accept: applicaton/json\" \'http://peadmin:peadmin@puppet.lab.local:8088/payload\' -k -q
+
+echo "Last agent run..."
+sudo puppet agent -t
+
+echo "Done."
+
+SCRIPT
+
+
+
+$install_puppet_agent_linux = <<SCRIPT
+master_ip="$1"
+master_hostname="$2"
+master_domain="$3"
+
+echo "Adding [$master_ip $master_hostname.$master_domain $master_hostname] to hosts file..."
+sudo echo -e "$master_ip $master_hostname.$master_domain $master_hostname\n$(cat /etc/hosts)" > /etc/hosts
+
+echo "Disabling firewall"
+sudo systemctl mask firewalld ; sudo systemctl stop firewalld
+
+echo "Setting up custom csr attributes for autosigning..."
+sudo mkdir -p /etc/puppetlabs/puppet
+printf "custom_attributes:\n  1.2.840.113549.1.9.7: d41d8cd98f00b204e9800998ecf8427e" >  /etc/puppetlabs/puppet/csr_attributes.yaml 
+
+echo "Installing puppet from https://$master_hostname.$master_domain:8140/packages/current/install.bash..."
+curl -k https://$master_hostname.$master_domain:8140/packages/current/install.bash | sudo bash
+
+echo "Configuring puppet with master server $master_hostname.$master_domain..."
+sudo puppet config set server $master_hostname.$master_domain
+
+echo "Done."
+
+SCRIPT
+
+
+
+$install_puppet_agent_windows = <<SCRIPT
+$master_ip=$Args[0]
+$master_hostname=$Args[1]
+$master_domain=$Args[2]
+$peinstaller_url_windows=$Args[3]
+$web_proxy_ip_port=$Args[4]
+
+echo "Adding [$master_ip $master_hostname.$master_domain] to hosts file..."
+add-content "C:\\Windows\\System32\\drivers\\etc\\hosts" "$master_ip $master_hostname.$master_domain"
+
+echo "Setting up custom csr attributes for autosigning..."
+mkdir 'C:\\Programdata\\PuppetLabs\\Puppet\\etc'
+set-content 'C:\\Programdata\\PuppetLabs\\Puppet\\etc\\csr_attributes.yaml' "custom_attributes:`r`n  1.2.840.113549.1.9.7: d41d8cd98f00b204e9800998ecf8427e"
+
+echo "Downloading puppet from $peinstaller_url_windows $web_proxy_ip_port..."
+wget $peinstaller_url_windows -outfile "c:\\windows\\temp\\puppet-enterprise-installer.msi" -Proxy $web_proxy_ip_port
+
+echo "Installing puppet..."
+Start-Process -FilePath msiexec -ArgumentList /i, "C:\\Windows\\Temp\\puppet-enterprise-installer.msi", /quiet -wait 
+
+echo "Configuring puppet with master server $master_hostname.$master_domain..."
+$env:Path += ";C:\\Program Files\\Puppet Labs\\Puppet\\bin"
+puppet config set server, "$master_hostname.$master_domain"
+
+echo "Done."
+
+SCRIPT
