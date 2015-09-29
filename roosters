@@ -43,9 +43,9 @@ echo "Updating classes via classifier API..."
 sudo curl -X POST https://$master_hostname.$master_domain:4433/classifier-api/v1/update-classes --cert $api_cert --key $api_key --cacert $api_cacert -v
 
 echo "Adding the puppetclassify puppet gem..."
-sudo puppet apply -e "package{'puppetclassify':ensure=>'0.1.0',provider=>'puppet_gem'}" -v
+sudo puppet apply -e "package{'puppetclassify':ensure=>'0.1.0',provider=>'gem'}" -v
 echo "Classifying nodes with module https://github.com/zoojar/prosvcs-node_manager..."
-sudo puppet apply -e 'include profile::master_classifier' -v
+sudo puppet apply -e 'include classifier' -v
 
 echo "Configuring policy-based autosigning..."
 echo 'd41d8cd98f00b204e9800998ecf8427e' >/etc/puppetlabs/puppet/global-psk
