@@ -6,5 +6,6 @@
   - "%{application_tier}"
   - common
   - defaults
+  - openstack-aio-01
 :yaml:
   :datadir: '/etc/puppetlabs/puppet/environments/%{environment}/hieradata'
