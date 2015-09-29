@@ -6,6 +6,7 @@ master_hostname="$4"
 master_domain="$5"
 master_ip="$6"
 hiera_yaml_url="https://raw.githubusercontent.com/zoojar/openstack-lab/master/hiera.yaml"
+r10k_pp_url="https://raw.githubusercontent.com/zoojar/openstack-lab/master/r10k.pp"
 api_cert="/etc/puppetlabs/puppet/ssl/certs/$master_hostname.$master_domain.pem"
 api_key="/etc/puppetlabs/puppet/ssl/private_keys/$master_hostname.$master_domain.pem"
 api_cacert="/etc/puppetlabs/puppet/ssl/certs/ca.pem"
@@ -13,7 +14,6 @@ api_cacert="/etc/puppetlabs/puppet/ssl/certs/ca.pem"
 
 echo "Adding [$master_hostname.$master_domain] to hosts file..."
 sudo echo -e "$master_ip	$master_hostname.$master_domain $master_hostname\n$(cat /etc/hosts)" > /etc/hosts
-
 
 echo "Disabling firewall"
 sudo systemctl mask firewalld ; sudo systemctl stop firewalld
@@ -29,17 +29,13 @@ curl -L $peanswers_url > /tmp/master.answers
 echo "Installing puppet..."
 sudo /tmp/peinstaller/puppet-enterprise-installer -a /tmp/master.answers
 
-sudo puppet config set basemodulepath '\$confdir/modules:/opt/puppet/share/puppet/modules' --section main
-sudo puppet config set environmentpath '\$confdir/environments' --section main
-
 echo "Add the hiera.yaml..."
 sudo curl -L "${hiera_yaml_url}" > `sudo puppet config print hiera_config`
 
-echo "Installing git, for r10k with shellgit..."
-sudo yum install git -y
-
-echo "Configuring r10k with puppet from $r10kyaml_url: $(curl -sL $r10kyaml_url)"
-curl -L $r10kyaml_url > /etc/puppetlabs/r10k/r10k.yaml
+echo "Configuring r10k..."
+sudo puppet module install zack/r10k
+sudo curl -L "${r10k_pp_url}" > /var/tmp/r10k.pp
+sudo puppet apply /var/tmp/r10k.pp
 sudo r10k deploy environment -pv
 
 echo "Updating classes via classifier API..."

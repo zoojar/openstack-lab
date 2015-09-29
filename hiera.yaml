@@ -1,6 +1,6 @@
 ---
 :backends:
-  - eyaml
+  - yaml
 :hierarchy:
   - "%{clientcert}"
   - "%{application_tier}"
