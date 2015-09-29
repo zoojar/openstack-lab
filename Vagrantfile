@@ -7,12 +7,12 @@ $master_hostname          = "puppet"
 $master_ip                = "192.168.100.100"
 
 # $peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-el-7-x86_64.tar"
-$peinstaller_url          = "http://192.168.0.5/puppet-enterprise-3.8.2-el-7-x86_64.tar"
+$peinstaller_url          = "http://192.168.43.181/puppet-enterprise-3.8.2-el-7-x86_64.tar"
 
 $peinstaller_url_windows  = "http://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-x64.msi"
 
 $peanswers_url            = "https://raw.githubusercontent.com/zoojar/openstack-lab/master/puppet.lab.local.answers"
-$r10kyaml_url             = "https://raw.githubusercontent.com/zoojar/vagrantlab-puppet/master/r10k.yaml"
+$r10kyaml_url             = "https://raw.githubusercontent.com/zoojar/openstack-lab/master/r10k.yaml"
 $autosign_these_nodes     = "*"
 
 load 'roosters'
@@ -30,7 +30,7 @@ nodes = [
     :shell_args      => [$peinstaller_url, $peanswers_url, $r10kyaml_url, $master_hostname, $domain, $master_ip] 
   },
   { 
-    :hostname        => 'controller-01',
+    :hostname        => 'openstack-aio-01',
     :domain          => $domain,
     :ip              => '192.168.100.12', 
     :box             => 'puppetlabs/centos-7.0-64-nocm', 

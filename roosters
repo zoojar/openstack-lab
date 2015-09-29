@@ -29,6 +29,9 @@ curl -L $peanswers_url > /tmp/master.answers
 echo "Installing puppet..."
 sudo /tmp/peinstaller/puppet-enterprise-installer -a /tmp/master.answers
 
+sudo puppet config set basemodulepath '\$confdir/modules:/opt/puppet/share/puppet/modules' --section main
+sudo puppet config set environmentpath '\$confdir/environments' --section main
+
 echo "Add the hiera.yaml..."
 sudo curl -L "${hiera_yaml_url}" > `sudo puppet config print hiera_config`
 
@@ -43,7 +46,7 @@ echo "Updating classes via classifier API..."
 sudo curl -X POST https://$master_hostname.$master_domain:4433/classifier-api/v1/update-classes --cert $api_cert --key $api_key --cacert $api_cacert -v
 
 echo "Adding the puppetclassify puppet gem..."
-sudo puppet apply -e "package{'puppetclassify':ensure=>'0.1.0',provider=>'gem'}" -v
+sudo puppet apply -e "package{'puppetclassify':ensure=>'0.1.0',provider=>'pe_gem'}" -v
 echo "Classifying nodes with module https://github.com/zoojar/prosvcs-node_manager..."
 sudo puppet apply -e 'include classifier' -v
 
