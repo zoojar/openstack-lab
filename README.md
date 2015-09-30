@@ -37,7 +37,7 @@ This script configures the following:
 - Deploys environment modules using r10k and the control-repo specified in 'r10k.pp'
 - Refreshes the classes on the master (post r10k run)
 - Creates nodes groups specified in the puppet module 'zj/classifier' (deployed by r10k) using the puppet module 'prosvcs/node_manager'
-- Sets up autosigning using 'auutosign.sh' and a global psk to allow auto-signing of the openstack node
+- Sets up autosigning using 'autosign.sh' and a global psk to allow auto-signing of the openstack node
 
 
 
