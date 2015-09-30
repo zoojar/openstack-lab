@@ -41,7 +41,7 @@ This script configures the following on the puppet master:
 11. Sets up autosigning using 'autosign.sh' and a global psk to allow auto-signing of the openstack node  
   
   
-######Openstack AIO Node
+#####Openstack AIO Node
 1. '/etc/hosts' file for master name
 2. Disable firewall
 3. Configure custom CSR attributes to allow auto-signing with the global psk
