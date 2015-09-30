@@ -10,7 +10,7 @@ r10k_pp_url="https://raw.githubusercontent.com/zoojar/openstack-lab/master/r10k.
 api_cert="/etc/puppetlabs/puppet/ssl/certs/$master_hostname.$master_domain.pem"
 api_key="/etc/puppetlabs/puppet/ssl/private_keys/$master_hostname.$master_domain.pem"
 api_cacert="/etc/puppetlabs/puppet/ssl/certs/ca.pem"
-#autosign_exe_url="https://raw.githubusercontent.com/zoojar/openstack-lab/master/autosign.sh"
+autosign_exe_url="https://raw.githubusercontent.com/zoojar/openstack-lab/master/autosign.sh"
 
 
 echo "Adding [$master_hostname.$master_domain] to hosts file..."
