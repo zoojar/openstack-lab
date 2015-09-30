@@ -10,7 +10,7 @@ Vagrant-Reload Vagrant plugin 0.0.1
 
 
 ###Getting started  
-1. clone this repo  
+1. Clone this repo  
 2. Run:   
 ```  
 vagrant up  
