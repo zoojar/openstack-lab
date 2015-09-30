@@ -27,7 +27,7 @@ https://github.com/zoojar/openstack-lab/blob/master/roosters
   
 
 #####Puppet Master  
-This script configures the following on the puppet master:
+This script configures the following on the puppet master:  
 1. '/etc/hosts' file
 2. Disable firewall
 3. Download PE installer tarball
