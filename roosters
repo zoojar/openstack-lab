@@ -52,7 +52,7 @@ curl -L "${autosign_exe_url}" > /etc/puppetlabs/puppet/autosign.sh
 sudo chmod 500 /etc/puppetlabs/puppet/autosign.sh ; sudo chown pe-puppet /etc/puppetlabs/puppet/autosign.sh
 sudo puppet config set autosign /etc/puppetlabs/puppet/autosign.sh --section master
 
-echo "restarting pe-puppetserver service for autosigning, eyaml & rbac whitelist config to take affect..."
+echo "restarting pe-puppetserver service for autosigning & yaml config to take affect..."
 sudo service pe-puppetserver restart
 
 sudo puppet agent -t
