@@ -6,8 +6,8 @@ $domain                   = "lab.local"
 $master_hostname          = "puppet"
 $master_ip                = "192.168.100.100"
 
- $peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-el-7-x86_64.tar"
-#$peinstaller_url          = "http://192.168.0.5/puppet-enterprise-3.8.2-el-7-x86_64.tar"
+$peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-el-7-x86_64.tar"
+# $peinstaller_url          = "http://192.168.0.5/puppet-enterprise-3.8.2-el-7-x86_64.tar"
 
 $peinstaller_url_windows  = "http://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-x64.msi"
 
@@ -22,6 +22,7 @@ nodes = [
     :hostname        => $master_hostname, 
     :domain          => $domain,
     :ip              => $master_ip, 
+    :ip_2            => '192.168.200.100', 
     :box             => 'puppetlabs/centos-7.0-64-nocm', 
     :ram             => 8000,
     :cpus            => 4,
@@ -33,7 +34,8 @@ nodes = [
     :hostname        => 'openstack-aio-01',
     :domain          => $domain,
     :ip              => '192.168.100.12', 
-    :box             => 'puppetlabs/centos-7.0-64-nocm', 
+    :ip_2            => '192.168.200.12',
+    :box             => 'puppetlabs/ubuntu-14.04-64-nocm', 
     :ram             => 8000,
     :cpus            => 4,
     :cpuexecutioncap => 50,
@@ -51,6 +53,7 @@ Vagrant.configure("2") do |config|
       cpus                   = node[:cpus] ? node[:cpus] : 2 ;
       cpuexecutioncap        = node[:cpuexecutioncap] ? node[:cpuexecutioncap] : 50 ;
       nodeconfig.vm.network :private_network, ip: node[:ip]
+      nodeconfig.vm.network :private_network, ip: node[:ip_2]
       nodeconfig.vm.provider :virtualbox do |vb|
         vb.customize [
           "modifyvm", :id,
