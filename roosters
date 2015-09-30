@@ -20,7 +20,7 @@ echo "Disabling firewall"
 sudo systemctl mask firewalld ; sudo systemctl stop firewalld
 
 echo "Downloading puppet from $peinstaller_url and extracting to /tmp/peinstaller..." 
-wget -q $peinstaller_url -O /tmp/peinstaller.tar.gz
+wget -q --timeout=1200 $peinstaller_url -O /tmp/peinstaller.tar.gz
 mkdir /tmp/peinstaller
 tar -xf /tmp/peinstaller.tar.gz --strip-components=1 -C /tmp/peinstaller
 
