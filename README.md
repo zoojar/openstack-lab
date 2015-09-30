@@ -28,19 +28,19 @@ https://github.com/zoojar/openstack-lab/blob/master/roosters
 
 #####Puppet Master  
 This script configures the following on the puppet master:  
-1. '/etc/hosts' file
-2. Disable firewall
-3. Download PE installer tarball
-4. Download PE answers file from this repo
-5. Install puppet using the answers file
-6. Download hiera.yaml config file to 'hiera_config' filepath
-7. Configures r10k using puppet module 'zack/r10k'
-8. Deploys environment modules using r10k and the control-repo specified in 'r10k.pp'
-9. Refreshes the classes on the master (post r10k run)
-10. Creates nodes groups specified in the puppet module 'zj/classifier' (deployed by r10k) using the puppet module 'prosvcs/node_manager'
-11. Sets up autosigning using 'autosign.sh' and a global psk to allow auto-signing of the openstack node
+1. '/etc/hosts' file  
+2. Disable firewall  
+3. Download PE installer tarball  
+4. Download PE answers file from this repo  
+5. Install puppet using the answers file  
+6. Download hiera.yaml config file to 'hiera_config' filepath  
+7. Configures r10k using puppet module 'zack/r10k'  
+8. Deploys environment modules using r10k and the control-repo specified in 'r10k.pp'  
+9. Refreshes the classes on the master (post r10k run)  
+10. Creates nodes groups specified in the puppet module 'zj/classifier' (deployed by r10k) using the puppet module 'prosvcs/node_manager'  
+11. Sets up autosigning using 'autosign.sh' and a global psk to allow auto-signing of the openstack node  
   
-
+  
 ######Openstack AIO Node
 1. '/etc/hosts' file for master name
 2. Disable firewall
