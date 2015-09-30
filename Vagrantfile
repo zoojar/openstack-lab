@@ -6,8 +6,8 @@ $domain                   = "lab.local"
 $master_hostname          = "puppet"
 $master_ip                = "192.168.100.100"
 
-# $peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-el-7-x86_64.tar"
-$peinstaller_url          = "http://192.168.43.181/puppet-enterprise-3.8.2-el-7-x86_64.tar"
+ $peinstaller_url          = "https://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-el-7-x86_64.tar"
+#$peinstaller_url          = "http://192.168.0.5/puppet-enterprise-3.8.2-el-7-x86_64.tar"
 
 $peinstaller_url_windows  = "http://pm.puppetlabs.com/puppet-enterprise/3.8.2/puppet-enterprise-3.8.2-x64.msi"
 
@@ -34,6 +34,9 @@ nodes = [
     :domain          => $domain,
     :ip              => '192.168.100.12', 
     :box             => 'puppetlabs/centos-7.0-64-nocm', 
+    :ram             => 8000,
+    :cpus            => 4,
+    :cpuexecutioncap => 50,
     :shell_script    => $install_puppet_agent_linux, 
     :shell_args      => [$master_ip, $master_hostname, $domain] 
   }
